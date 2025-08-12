@@ -2,6 +2,11 @@
 
 A Flask-based machine learning API that predicts hotel prices based on competitor hotel pricing and occupancy data.
 
+## Improvements needed:
+- add preprocessing of base file
+  - as per filters
+- add visiualization
+
 ## 📂 Project Structure
 ```
 
