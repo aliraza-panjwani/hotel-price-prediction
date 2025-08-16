@@ -23,19 +23,17 @@ page = st.sidebar.radio("Pages", ["Dashboard", "Predict from API"])
 if page == "Dashboard":
     st.title("Hotel Price Analysis Dashboard")
 
-    # Hotel selector
+    # Hotel selector for prediction
     price_cols = [col for col in df.columns if col.endswith("_price")]
     hotel_choice = st.selectbox("Select hotel to analyze", price_cols)
-
-    # Get last 10 rows sorted by date
+    
+    # Prepare data
     df_sorted = df.sort_values("checkin_date")
     last_10_df = df_sorted.tail(20).copy()
+    last_10_df["checkin_date"] = pd.to_datetime(last_10_df["checkin_date"])
 
-    # Initialize predicted column
+    # Fetch predictions
     last_10_df["Predicted"] = None
-
-    # Fetch prediction from API for each date
-    st.info("Fetching predictions from API...")
     for i, row in last_10_df.iterrows():
         payload = {
             "predict_date": row["checkin_date"].strftime("%Y-%m-%d"),
@@ -44,13 +42,10 @@ if page == "Dashboard":
         response = fetch_prediction(API_URL, payload)
         if isinstance(response, dict) and "predicted_price" in response:
             last_10_df.at[i, "Predicted"] = response["predicted_price"]
-        else:
-            last_10_df.at[i, "Predicted"] = None  # or fallback value
 
-    # Drop rows without prediction
     plot_df = last_10_df.dropna(subset=["Predicted"])
-    print(plot_df.shape)
-    # Plot actual vs predicted
+
+    # --- Chart 1: Actual vs Predicted for selected hotel ---
     st.subheader(f"Actual vs Predicted Prices for: {hotel_choice}")
     fig, ax = plt.subplots(figsize=(10, 5))
     sns.lineplot(data=plot_df, x="checkin_date", y=hotel_choice, label="Actual Price", marker="o", ax=ax)
@@ -61,9 +56,70 @@ if page == "Dashboard":
     ax.legend()
     st.pyplot(fig)
 
-    # Show raw data
+    # --- Chart 2: Compare Predicted with All Hotels ---
+    st.subheader("Compare Predicted Price with All Hotels")
+    fig2, ax2 = plt.subplots(figsize=(12, 4))
+    sns.lineplot(data=plot_df, x="checkin_date", y="Predicted", label="Predicted Price", marker="o", linewidth=3, color="red", ax=ax2)
+
+    for col in price_cols:
+        if hotel_choice.strip() != col.strip():
+            sns.lineplot(data=plot_df, x="checkin_date", y=col, label=col.replace("_price", ""), ax=ax2)
+
+    ax2.set_title("Predicted vs Other Hotels (Last 10 Days)")
+    ax2.set_ylabel("Price ($)")
+    ax2.set_xlabel("Check-in Date")
+    ax2.legend()
+    st.pyplot(fig2)
+
+    # Raw data
     if st.checkbox("Show raw data"):
-        st.dataframe(plot_df[["checkin_date", hotel_choice, "Predicted"]])
+        st.dataframe(plot_df[["checkin_date", "Predicted"] + price_cols])
+
+# if page == "Dashboard":
+#     st.title("Hotel Price Analysis Dashboard")
+
+#     # Hotel selector
+#     price_cols = [col for col in df.columns if col.endswith("_price")]
+#     hotel_choice = st.selectbox("Select hotel to analyze", price_cols)
+
+#     # Get last 10 rows sorted by date
+#     df_sorted = df.sort_values("checkin_date")
+#     last_10_df = df_sorted.tail(20).copy()
+
+#     print(last_10_df.shape)
+#     # Initialize predicted column
+#     last_10_df["Predicted"] = None
+
+#     # Fetch prediction from API for each date
+#     st.info("Fetching predictions from API...")
+#     for i, row in last_10_df.iterrows():
+#         payload = {
+#             "predict_date": row["checkin_date"].strftime("%Y-%m-%d"),
+#             "vs_days": 1
+#         }
+#         response = fetch_prediction(API_URL, payload)
+#         if isinstance(response, dict) and "predicted_price" in response:
+#             last_10_df.at[i, "Predicted"] = response["predicted_price"]
+#         else:
+#             last_10_df.at[i, "Predicted"] = None  # or fallback value
+
+#     # Drop rows without prediction
+#     plot_df = last_10_df.dropna(subset=["Predicted"])
+#     print(plot_df.shape)
+#     # Plot actual vs predicted
+#     st.subheader(f"Actual vs Predicted Prices for: {hotel_choice}")
+#     fig, ax = plt.subplots(figsize=(10, 5))
+#     sns.lineplot(data=plot_df, x="checkin_date", y=hotel_choice, label="Actual Price", marker="o", ax=ax)
+#     sns.lineplot(data=plot_df, x="checkin_date", y="Predicted", label="Predicted Price", marker="o", ax=ax)
+#     ax.set_title(f"{hotel_choice} - Last 10 Days")
+#     ax.set_ylabel("Price ($)")
+#     ax.set_xlabel("Check-in Date")
+#     ax.legend()
+#     st.pyplot(fig)
+
+#     # Show raw data
+#     if st.checkbox("Show raw data"):
+#         st.dataframe(plot_df[["checkin_date", hotel_choice, "Predicted"]])
 
 
 # ---------------- Prediction Section ----------------
