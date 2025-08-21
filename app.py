@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from utils.api_utils import fetch_prediction
+import requests
 
 # Constants
 DATA_PATH = "data/price_table_dropna.csv"
@@ -18,6 +19,30 @@ df = load_data()
 # Page navigation
 st.set_page_config(page_title="Hotel Price Dashboard", layout="wide")
 page = st.sidebar.radio("Pages", ["Dashboard", "Predict from API"])
+
+# call register api
+register_url = "/".join(API_URL.split("/")[:-1]+["register"])
+print(register_url)
+payload = {
+    "target_hotel": "grand-season-inn-waupaca",
+    "competitor_hotels": [
+        "quality-inn-new-london-wisconsin",
+        "motel-6-wisconsin-rapids",
+        "valley-inn-neenah"
+    ]
+}
+
+headers = {
+    "Content-Type": "application/json"
+}
+
+try:
+    response = requests.post(register_url, json=payload, headers=headers)
+    print("Status Code:", response.status_code)
+    print("Response:", response.json())
+except Exception as e:
+    print("Error:", str(e))
+
 
 # ---------------- Dashboard ----------------
 if page == "Dashboard":
