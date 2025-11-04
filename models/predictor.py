@@ -16,9 +16,18 @@ class PricePredictor:
             data_path (str): Path to CSV dataset.
         """
         self.logger = setup_logging("price_predictor", "logs/price_predictor.log")
-        self.df = pd.read_csv(data_path, parse_dates=['checkin_date'])
+        self.df = self.read_data(data_path)
         self.model = None
         self.logger.info("PricePredictor initialized with data: %s", data_path)
+
+    def read_data(self, data_path: str):
+        """
+        Read dataset from CSV file.
+        """
+        df = pd.read_csv(data_path, parse_dates=['checkin_date'])
+        self.logger.info("Data read from: %s", data_path)
+        df.fillna(value=0, inplace=True)
+        return df
 
     def prepare_data(self, target_hotel: str, competitor_hotels: list, vs_days: int):
         """
@@ -95,6 +104,7 @@ class PricePredictor:
             raise ValueError("Model not trained yet.")
 
         past_date = predict_date - timedelta(days=vs_days)
+        print("Predicting for date:", predict_date.date(), "using past date:", past_date.date())
         if past_date not in self.df['checkin_date'].values or predict_date not in self.df['checkin_date'].values:
             raise ValueError("Required dates are missing from dataset.")
 

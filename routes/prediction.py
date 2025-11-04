@@ -59,6 +59,7 @@ def predict_price():
     """
     Predict price for a given date.
     """
+    print("Received prediction request.")
     data = request.json
     predict_date_str = data.get("predict_date")
     vs_days = data.get("vs_days", 1)
@@ -83,5 +84,4 @@ def predict_price():
         competitor_hotels=registered_hotels["competitor_hotels"],
         vs_days=vs_days
     )
-
     return jsonify({"predicted_price": round(price, 2)})
